@@ -149,25 +149,47 @@ function load() {
   isGoal = 0;
   setTimer = 1;
   countdown();
+	connect();
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const eventId = Number(urlParams.get("eventId"));
-
-  socket = new WebSocket("wss://gamecast.betdata.pro:8443");
-  socket.onopen = function (e) {
-    //socket.send(JSON.stringify({r:"authenticate", a:{key:"*******"}}));
-    socket.send(JSON.stringify({ r: "subscribe_event", a: { id: eventId } }));
-  };
-
-  socket.onmessage = function (e) {
-    var data = JSON.parse(e.data);
-
-    if (data.r == "event") {
-      // New function added for websocket. Call it.
-      handleEventData(data.d);
-    }
-  };
+	const urlParams = new URLSearchParams(window.location.search);
+	const eventId = Number(urlParams.get('eventId'));
+  // document.getElementById('link').setAttribute('href', '../basketball-2d/index.html?eventId=' + eventId)
 }
+
+
+function connect() {
+	const urlParams = new URLSearchParams(window.location.search);
+	const eventId = Number(urlParams.get('eventId'));
+
+	socket=new WebSocket("wss://gamecast.betdata.pro:8443");
+	socket.onopen=function(e) {
+		socketLastResponseTime = Date.now();
+		socket.send(JSON.stringify({r:"subscribe_event", a:{id:eventId}}));
+	};
+
+	socket.onmessage=function(e) {
+		socketLastResponseTime = Date.now();
+		var data = JSON.parse(e.data);
+
+		if (data.r == 'event') {
+			// New function added for websocket. Call it.
+			handleEventData(data.d);
+		}
+	};
+}
+
+setInterval(function() {
+	if (socketLastResponseTime && (Date.now() - socketLastResponseTime) > 8000) {
+		if (socket) {
+			try {
+				socket.close();
+			} catch (err) {};
+		}
+		console.log('Reconnecting...');
+		connect();
+	}
+}, 4000);
+
 function bounceBall(bx, by) {
   if (!setTimer) return;
   tt = t * 2;
