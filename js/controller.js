@@ -2,7 +2,8 @@ var socket;
 var viewMode = 3;
 var currentState = 0;
 var gameCount = 0;
-var currentPeriod
+var currentPeriod;
+var socketLastResponseTime;
 
 var isLimitedCov = false,
   isperiodscore = false;
